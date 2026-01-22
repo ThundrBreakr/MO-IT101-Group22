@@ -1,5 +1,42 @@
 
 public class Main {
+
+    public class Employee {
+
+        private String employeeName;
+        private long employeeNumber;
+        private double hoursWorked;
+        private byte clockIn;
+        private byte clockOut;
+        private double hourlyRate;
+        private double grossSalary;
+        private double netSalary;
+        private byte deduction;
+
+        public Employee (String employeeName, long employeeNumber, double hourlyRate) {
+            this.employeeName = employeeName;
+            this.employeeNumber = employeeNumber;
+            this.hourlyRate = hourlyRate;
+        }
+
+        public double getHoursWorked() {
+            return
+        }
+
+        public double getGrossSalary() {
+            return getHoursWorked() * hourlyRate;
+        }
+
+        public double getNetSalary() {
+            return getGrossSalary() / deduction;
+        }
+
+        public String getEmployeeName() {
+            return getEmployeeName();
+        }
+
+    }
+
     public static void main(String[] args) {
 
         String employeeName = "Willy Wonder";
