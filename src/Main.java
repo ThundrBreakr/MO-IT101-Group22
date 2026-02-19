@@ -17,7 +17,6 @@ public class Main {
             this.employeeName = employeeName;
             this.employeeNumber = employeeNumber;
             this.hourlyRate = hourlyRate;
-
         }
 
         public double getHoursWorked() {
