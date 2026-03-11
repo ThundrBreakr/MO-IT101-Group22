@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 
 public class SearchEmployeePayroll {
 
-    // Default location of the CSV in this repo. If you move the file, update this path.
+    // Default location of the CSV in this repo. If you move the file, update this path, jit
     private static final String DEFAULT_CSV_PATH =
             "D:\\Seth\\Modelsheets\\LHVengence\\Hello-World-MotorPh\\Employee Details.csv";
 
@@ -18,12 +18,12 @@ public class SearchEmployeePayroll {
     private static final int COL_FIRST_NAME = 2;
     private static final int COL_GROSS_SALARY = 13;
 
-    // Expected minimum number of columns in a valid row.
+    // Expected minimum number of columns in a valid row, jit
     private static final int MIN_COLUMNS = 14;
 
     /*
-     * Split CSV by commas that are NOT inside double quotes.
-     * This keeps values like "50,000" together as one column.
+     * Split CSV by commas that are NOT inside double quotes, jit.
+     * This keeps values like "50,000" together as one column, jit.
      */
     private static final Pattern CSV_SPLIT_PATTERN =
             Pattern.compile(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
@@ -50,7 +50,7 @@ public class SearchEmployeePayroll {
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
 
-            // Skip the header row (assumes the first line contains column names).
+            // Skip the header row (assumes the first line contains column names)     ... jit.
             reader.readLine();
 
             String line;
@@ -99,7 +99,7 @@ public class SearchEmployeePayroll {
                             netPay
                     );
 
-                    break; // stop searching
+                    break; // stop searching jit after finding the employeesjit
                 }
             }
 
@@ -166,22 +166,22 @@ public class SearchEmployeePayroll {
     }
 
     public static double computeSSS(double salary) {
-        // Placeholder: simple percentage-based computation.
+        // Placeholder: simple percentage-based computation. jit
         return salary * 0.045;
     }
 
     public static double computePhilHealth(double salary) {
-        // Placeholder: simple percentage-based computation.
+        // Placeholder: simple percentage-based computation. uh jit
         return salary * 0.03;
     }
 
     public static double computePagIBIG(double salary) {
-        // Placeholder: simple percentage-based computation.
+        // Placeholder: simple percentage-based computation. uh huh jit
         return salary * 0.02;
     }
 
     public static double computeIncomeTax(double salary) {
-        // Placeholder brackets for demo purposes.
+        // Placeholder brackets for demo purposes. yeah okay jit
         if (salary <= 20000) {
             return 0;
         } else if (salary <= 40000) {
