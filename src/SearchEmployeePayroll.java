@@ -362,8 +362,8 @@ public class SearchEmployeePayroll {
         }
         return salary * 0.20;
     }
-}
 
+1
     private static class Employee {
         private final String employeeNumber;
         private final String fullName;
