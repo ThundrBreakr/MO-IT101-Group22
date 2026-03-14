@@ -1,21 +1,22 @@
-//hello im the dude who owns this code.
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Scanner;
-import java.util.regex.Pattern;
+// IMPORTS
+
+import java.io.BufferedReader;  // Reads text from files efficiently using buffering
+import java.io.File;            // Represents a file or directory path
+import java.io.FileReader;      // Opens and reads text from a file
+import java.io.IOException;     // Handles errors when reading files
+import java.time.Duration;      // Calculates time difference between two times
+import java.time.LocalDate;     // Stores a date (year, month, day)
+import java.time.LocalTime;     // Stores a time (hour and minute)
+import java.time.YearMonth;     // Stores a specific month and year
+import java.time.format.DateTimeFormatter;          // Parses and formats dates and times
+import java.time.format.DateTimeParseException;     // Handles invalid date or time formats
+import java.util.ArrayList;     // Stores dynamic lists of data
+import java.util.HashMap;       // Stores data using key value pairs
+import java.util.List;          // Interface used for list collections
+import java.util.Locale;        // Defines regional settings for parsing
+import java.util.Map;           // Interface for key value collections
+import java.util.Scanner;       // Reads user input from the console
+import java.util.regex.Pattern; // Matches patterns such as CSV splitting
 
 public class SearchEmployeePayroll {
 
@@ -72,11 +73,11 @@ public class SearchEmployeePayroll {
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
-            System.out.println("\n1. Process Payroll (Do not include allowances)");
-            System.out.println("Display sub-options:");
-            System.out.println("1. One employee");
-            System.out.println("2. All employees");
-            System.out.println("3. Exit the program");
+            System.out.println("\n=========== PROCESS PAYROLL ============");
+            System.out.println("Select an option:");
+            System.out.println("  1. One employee");
+            System.out.println("  2. All employees");
+            System.out.println("  3. Exit the program");
             System.out.print("Enter your choice: ");
 
             String choice = scanner.nextLine().trim();
@@ -126,17 +127,18 @@ public class SearchEmployeePayroll {
     private static void printEmployeePayroll(Employee employee, Map<String, Double> cutoffHours) {
         List<String> cutoffKeys = buildCutoffKeysFromJuneToDecember2024();
 
-        System.out.println("\n========================================");
+        System.out.println("\n========= EMPLOYEE INFORMATION =========");
         System.out.println("Employee #: " + employee.employeeNumber);
         System.out.println("Employee Name: " + employee.fullName);
         System.out.println("Birthday: " + employee.birthday);
+        System.out.println("========================================");
 
         for (String cutoffKey : cutoffKeys) {
             String label = cutoffLabel(cutoffKey);
             double totalHoursWorked = cutoffHours.getOrDefault(cutoffKey, 0.0);
             double grossSalary = employee.grossSemiMonthly;
 
-            System.out.println("\nCutoff Date: " + label);
+            System.out.println("\n==== Cutoff Date: " + label + " ====");
             System.out.printf("Total Hours Worked: %.2f%n", totalHoursWorked);
             System.out.printf("Gross Salary: %.2f%n", grossSalary);
 
@@ -148,11 +150,14 @@ public class SearchEmployeePayroll {
                 double totalDeductions = sss + philHealth + pagIbig + tax;
                 double netSalary = grossSalary - totalDeductions;
 
-                System.out.printf("SSS: %.2f%n", sss);
-                System.out.printf("PhilHealth: %.2f%n", philHealth);
-                System.out.printf("Pag-IBIG: %.2f%n", pagIbig);
-                System.out.printf("Tax: %.2f%n", tax);
-                System.out.printf("Total Deductions: %.2f%n", totalDeductions);
+                // Display deductions and net salary for the second cutoff
+                System.out.println("Deductions");
+                System.out.printf("   SSS: %.2f%n", sss);
+                System.out.printf("   PhilHealth: %.2f%n", philHealth);
+                System.out.printf("   Pag-IBIG: %.2f%n", pagIbig);
+                System.out.printf("   Tax: %.2f%n", tax);
+                System.out.println("   -----------------------");
+                System.out.printf("   Total Deductions: %.2f%n", totalDeductions);
                 System.out.printf("Net Salary: %.2f%n", netSalary);
             } else {
                 System.out.printf("Net Salary: %.2f%n", grossSalary);
@@ -183,7 +188,7 @@ public class SearchEmployeePayroll {
 
             // Skip the header row (assumes the first line contains column names)     ... jit.
         int endOfMonth = YearMonth.of(2024, month).lengthOfMonth();
-        return monthName + " 16 to " + monthName + " " + endOfMonth + " (Second payout includes all deductions)";
+        return monthName + " 16 to " + monthName + " " + endOfMonth;
     }
 
     private static boolean isSecondCutoff(String cutoffKey) {
@@ -280,7 +285,8 @@ public class SearchEmployeePayroll {
 
     }
 
-    // --- Payroll Methods ---
+    // PAYROLL METHODS
+
     private static Double computeWorkedHours(String logInRaw, String logOutRaw) {
         try {
             LocalTime logIn = LocalTime.parse(logInRaw, TIME_FORMAT);
@@ -363,7 +369,8 @@ public class SearchEmployeePayroll {
         return salary * 0.20;
     }
 
-1
+    // EMPLOYEE CLASS TO STORE EMPLOYEE DETAILS
+
     private static class Employee {
         private final String employeeNumber;
         private final String fullName;
