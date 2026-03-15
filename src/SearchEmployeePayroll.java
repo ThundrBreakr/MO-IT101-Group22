@@ -1,6 +1,6 @@
 // IMPORTS
 
-import java.io.BufferedReader;  // Reads text from files efficiently using buffering
+import java.io.BufferedReader;  // Efficiently reads text from files
 import java.io.File;            // Represents a file or directory path
 import java.io.FileReader;      // Opens and reads text from a file
 import java.io.IOException;     // Handles errors when reading files
@@ -16,28 +16,29 @@ import java.util.List;          // Interface used for list collections
 import java.util.Locale;        // Defines regional settings for parsing
 import java.util.Map;           // Interface for key value collections
 import java.util.Scanner;       // Reads user input from the console
-import java.util.regex.Pattern; // Matches patterns such as CSV splitting
+import java.util.regex.Pattern; // Matches patterns (CSV splitting)
 
 public class SearchEmployeePayroll {
 
-    // Default location of the CSV in this repo. If you move the file, update this path, jit
+    // FILE PATHS
+    
     private static final String EMPLOYEE_CSV_PATH = "Employee Details.csv";
     private static final String ATTENDANCE_CSV_PATH = "attendance_record.csv";
 
+    // pattern to split CSV while ignoring commas inside quotes
     private static final Pattern CSV_SPLIT_PATTERN =
             Pattern.compile(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
-
+    
+    // date and time formats used in CSV files
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("MM/dd/yyyy");
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("H:mm", Locale.ENGLISH);
 
-
-    // CSV columns used by this program (0-based indexes).
+    // CSV column indexes
     private static final int COL_EMPLOYEE_NUMBER = 0;
     private static final int COL_LAST_NAME = 1;
     private static final int COL_FIRST_NAME = 2;
     private static final int COL_BIRTHDAY = 3;
     private static final int COL_GROSS_SEMI_MONTHLY = 17;
-
 
     private static final int MIN_EMPLOYEE_COLS = 18;
     private static final int ATTENDANCE_COL_EMPLOYEE_NUMBER = 0;
@@ -46,28 +47,106 @@ public class SearchEmployeePayroll {
     private static final int ATTENDANCE_COL_LOG_OUT = 5;
     private static final int MIN_ATTENDANCE_COLS = 6;
 
+    // MAIN METHOD
+
     public static void main(String[] args) {
+        
+        // LOGIN SYSTEM
+
+        // display login header
+        System.out.println("========================================");
+        System.out.println("             MOTORPH LOGIN              ");
+        System.out.println("========================================");
+
+        // scanner for user input
+        Scanner scanner = new Scanner(System.in);
+        
+        // define valid usernames and passwords
+        Map<String, String> validUsers = new HashMap<>();
+        validUsers.put("employee", "12345");
+        validUsers.put("payroll_staff", "12345");
+
+        String username;
+        String password;
+
+        while (true) { // keep asking for login until correct credentials
+            System.out.print("Username: ");
+            username = scanner.nextLine().trim();
+
+            System.out.print("Password: ");
+            password = scanner.nextLine().trim();
+
+        // check credentials
+        if (validUsers.containsKey(username) && validUsers.get(username).equals(password)) {
+            break; // login successful, exit loop
+        } else {
+            System.out.println("Incorrect username or password.\nPlease try again.\n");
+        }
+    }
+        
+        // LOAD CSV FILES
 
         File employeeFile = new File(EMPLOYEE_CSV_PATH);
         File attendanceFile = new File(ATTENDANCE_CSV_PATH);
 
+        // verify files exist and are readable
         if (!isReadableFile(employeeFile) || !isReadableFile(attendanceFile)) {
             System.out.println("Error: Required CSV file/s not found or unreadable.");
             return;
         }
 
+        // load employee and attendance data
         Map<String, Employee> employees = loadEmployees(employeeFile);
         Map<String, Map<String, Double>> cutoffHoursByEmployee = loadAttendanceCutoffHours(attendanceFile);
 
-
+        // exit if no employee records are found
         if (employees.isEmpty()) {
             System.out.println("No employee records found.");
-
             return;
         }
 
-        runMenu(employees, cutoffHoursByEmployee);
+        // BRANCH MENU BASED ON USERNAME
+
+        if (username.equals("employee")) {
+            runEmployeeMenu(scanner, employees); // show only their own info
+        } else if (username.equals("payroll_staff")) {
+            runMenu(employees, cutoffHoursByEmployee); // full payroll menu
+        }
     }
+    
+    // EMPLOYEE MENU (for reguralr employees)
+
+    private static void runEmployeeMenu(Scanner scanner, Map<String, Employee> employees) {
+        while (true) { // keep menu active until user exits
+            System.out.println("\n============ EMPLOYEE MENU =============");
+            System.out.println("Select an option:");
+            System.out.println("  1. Enter Employee Number");
+            System.out.println("  2. Exit Program");
+            System.out.print("Enter choice: ");
+
+            String choice = scanner.nextLine().trim();
+
+            switch (choice) {
+                case "1":
+                    System.out.print("Enter Employee Number: ");
+                    String empNum = scanner.nextLine().trim();
+                    Employee emp = employees.get(empNum);
+                    if (emp != null) {
+                        printEmployeePayroll(emp, new HashMap<>()); // show payroll info
+                    } else {
+                        System.out.println("Employee number does not exist.");
+                    }
+                    break;
+                case "2":
+                    System.out.println("Exiting program.");
+                    return; // exit employee menu
+                default:
+                    System.out.println("Invalid choice. Please select 1 or 2.");
+            }
+        }
+    }
+
+    // PAYROLL MENU (for payroll staff)
 
     private static void runMenu(Map<String, Employee> employees, Map<String, Map<String, Double>> cutoffHoursByEmployee) {
         Scanner scanner = new Scanner(System.in);
@@ -75,10 +154,10 @@ public class SearchEmployeePayroll {
         while (true) {
             System.out.println("\n=========== PROCESS PAYROLL ============");
             System.out.println("Select an option:");
-            System.out.println("  1. One employee");
-            System.out.println("  2. All employees");
-            System.out.println("  3. Exit the program");
-            System.out.print("Enter your choice: ");
+            System.out.println("  1. One Employee");
+            System.out.println("  2. All Employees");
+            System.out.println("  3. Exit Program");
+            System.out.print("Enter choice: ");
 
             String choice = scanner.nextLine().trim();
 
@@ -98,11 +177,12 @@ public class SearchEmployeePayroll {
         }
     }
 
+    // PROCESS SINGLE EMPLOYEE
+
     private static void processOneEmployee(Scanner scanner, Map<String, Employee> employees,
                                            Map<String, Map<String, Double>> cutoffHoursByEmployee) {
-        System.out.print("Enter the employee number: ");
+        System.out.print("Enter employee number: ");
         String employeeNumber = scanner.nextLine().trim();
-
 
         Employee employee = employees.get(employeeNumber);
         if (employee == null) {
@@ -114,6 +194,7 @@ public class SearchEmployeePayroll {
         printEmployeePayroll(employee, cutoffHoursByEmployee.getOrDefault(employeeNumber, new HashMap<>()));
     }
 
+    // PROCESS ALL EMPLOYEES
 
       private static void processAllEmployees(Map<String, Employee> employees,
                                             Map<String, Map<String, Double>> cutoffHoursByEmployee) {
@@ -124,25 +205,29 @@ public class SearchEmployeePayroll {
         }
     }
 
+    // PRINT PAYROLL INFO
+
     private static void printEmployeePayroll(Employee employee, Map<String, Double> cutoffHours) {
         List<String> cutoffKeys = buildCutoffKeysFromJuneToDecember2024();
 
+        // employee details
         System.out.println("\n========= EMPLOYEE INFORMATION =========");
         System.out.println("Employee #: " + employee.employeeNumber);
         System.out.println("Employee Name: " + employee.fullName);
         System.out.println("Birthday: " + employee.birthday);
         System.out.println("========================================");
 
+        // loop through all cutoffs for display
         for (String cutoffKey : cutoffKeys) {
             String label = cutoffLabel(cutoffKey);
             double totalHoursWorked = cutoffHours.getOrDefault(cutoffKey, 0.0);
             double grossSalary = employee.grossSemiMonthly;
 
-            System.out.println("\n==== Cutoff Date: " + label + " ====");
+            System.out.println("\n---- Cutoff Date: " + label + " ----");
             System.out.printf("Total Hours Worked: %.2f%n", totalHoursWorked);
             System.out.printf("Gross Salary: %.2f%n", grossSalary);
 
-            if (isSecondCutoff(cutoffKey)) {
+            if (isSecondCutoff(cutoffKey)) { // deductions only for 2nd cutoff
                 double sss = computeSSS(grossSalary);
                 double philHealth = computePhilHealth(grossSalary);
                 double pagIbig = computePagIBIG(grossSalary);
@@ -150,7 +235,7 @@ public class SearchEmployeePayroll {
                 double totalDeductions = sss + philHealth + pagIbig + tax;
                 double netSalary = grossSalary - totalDeductions;
 
-                // Display deductions and net salary for the second cutoff
+                // display deductions and net salary
                 System.out.println("Deductions");
                 System.out.printf("   SSS: %.2f%n", sss);
                 System.out.printf("   PhilHealth: %.2f%n", philHealth);
@@ -165,11 +250,13 @@ public class SearchEmployeePayroll {
         }
     }
 
+    // BUILD CUTOFF KEYS
+
     private static List<String> buildCutoffKeysFromJuneToDecember2024() {
         List<String> keys = new ArrayList<>();
         for (int month = 6; month <= 12; month++) {
-            keys.add(String.format("2024-%02d-1", month));
-            keys.add(String.format("2024-%02d-2", month));
+            keys.add(String.format("2024-%02d-1", month)); // 1st cutoff
+            keys.add(String.format("2024-%02d-2", month)); // 2nd cutoff
         }
         return keys;
     }
@@ -185,8 +272,7 @@ public class SearchEmployeePayroll {
             return monthName + " 1 to " + monthName + " 15";
         }
 
-
-            // Skip the header row (assumes the first line contains column names)     ... jit.
+            // skip the first row of the CSV file since it contains column headers
         int endOfMonth = YearMonth.of(2024, month).lengthOfMonth();
         return monthName + " 16 to " + monthName + " " + endOfMonth;
     }
@@ -195,13 +281,13 @@ public class SearchEmployeePayroll {
         return cutoffKey.endsWith("-2");
     }
 
-    
+    // LOAD EMPLOYEES
+
     private static Map<String, Employee> loadEmployees(File file) {
         Map<String, Employee> employees = new HashMap<>();
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            reader.readLine(); // header
-
+            reader.readLine(); // skip header
 
             String line;
             while ((line = reader.readLine()) != null) {
@@ -218,11 +304,9 @@ public class SearchEmployeePayroll {
                 String birthday = clean(parts[COL_BIRTHDAY]);
                 Double grossSemiMonthly = tryParseMoney(parts[COL_GROSS_SEMI_MONTHLY]);
 
-
                 if (employeeNumber.isEmpty() || grossSemiMonthly == null) {
                     continue;
                 }
-
 
                 String fullName = firstName + " " + lastName;
                 employees.put(employeeNumber, new Employee(employeeNumber, fullName, birthday, grossSemiMonthly));
@@ -231,17 +315,16 @@ public class SearchEmployeePayroll {
             System.out.println("Error reading employee file: " + e.getMessage());
         }
 
-
         return employees;
     }
-
 
     private static Map<String, Map<String, Double>> loadAttendanceCutoffHours(File file) {
         Map<String, Map<String, Double>> hoursByEmployee = new HashMap<>();
 
+        // LOAD ATTENDANCE AND CALCULATE HOURS
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            reader.readLine(); // header
+            reader.readLine(); // skip header
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = splitCsvLine(line);
@@ -249,17 +332,15 @@ public class SearchEmployeePayroll {
                     continue;
                 }
 
-
                 String employeeNumber = clean(parts[ATTENDANCE_COL_EMPLOYEE_NUMBER]);
                 LocalDate date = parseDate(clean(parts[ATTENDANCE_COL_DATE]));
                 Double workedHours = computeWorkedHours(clean(parts[ATTENDANCE_COL_LOG_IN]), clean(parts[ATTENDANCE_COL_LOG_OUT]));
-
 
                 if (employeeNumber.isEmpty() || date == null || workedHours == null) {
                     continue;
                 }
 
-
+                // only process attendance records between June and December 2024
                 if (date.getYear() != 2024 || date.getMonthValue() < 6 || date.getMonthValue() > 12) {
                     continue;
                 }
@@ -275,7 +356,7 @@ public class SearchEmployeePayroll {
           System.out.println("Error reading attendance file: " + e.getMessage());
         }
 
-        // Intentionally not closing the Scanner to avoid closing System.in for the rest of the JVM.
+        // intentionally not closing the Scanner to avoid closing System.in for the rest of the JVM
         return hoursByEmployee;
     }
 
@@ -285,20 +366,19 @@ public class SearchEmployeePayroll {
 
     }
 
-    // PAYROLL METHODS
+    // PAYROLL CALCULATIONS
 
     private static Double computeWorkedHours(String logInRaw, String logOutRaw) {
         try {
             LocalTime logIn = LocalTime.parse(logInRaw, TIME_FORMAT);
             LocalTime logOut = LocalTime.parse(logOutRaw, TIME_FORMAT);
 
-
             if (logOut.isBefore(logIn)) {
                 return null;
             }
 
             Duration duration = Duration.between(logIn, logOut);
-            return duration.toMinutes() / 60.0;
+            return duration.toMinutes() / 60.0; // convert to hours
         } catch (DateTimeParseException e) {
             return null;
         }
@@ -326,7 +406,7 @@ public class SearchEmployeePayroll {
             return null;
         }
 
-        // Remove surrounding quotes and thousands separators before parsing.
+        // remove quotation marks and comma separators before parsing
         String normalized = rawCsvValue.replace("\"", "").replace(",", "").trim();
         if (normalized.isEmpty()) {
             return null;
@@ -344,23 +424,25 @@ public class SearchEmployeePayroll {
 
     }
 
+    // DEDUCTIONS
+
     public static double computeSSS(double salary) {
-        // Placeholder: simple percentage-based computation. jit
+        // placeholder: simple percentage-based computation
         return salary * 0.045;
     }
 
     public static double computePhilHealth(double salary) {
-        // Placeholder: simple percentage-based computation. uh jit
+        // placeholder: simple percentage-based computation
         return salary * 0.03;
     }
 
     public static double computePagIBIG(double salary) {
-        // Placeholder: simple percentage-based computation. uh huh jit
+        // placeholder: simple percentage-based computation
         return salary * 0.02;
     }
 
     public static double computeIncomeTax(double salary) {
-        // Placeholder brackets for demo purposes. yeah okay jit
+        // placeholder: brackets for demo purposes
         if (salary <= 20000) {
             return 0;
         } else if (salary <= 40000) {
@@ -369,7 +451,7 @@ public class SearchEmployeePayroll {
         return salary * 0.20;
     }
 
-    // EMPLOYEE CLASS TO STORE EMPLOYEE DETAILS
+    // EMPLOYEE CLASS
 
     private static class Employee {
         private final String employeeNumber;
