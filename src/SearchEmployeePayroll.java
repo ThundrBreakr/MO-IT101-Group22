@@ -66,24 +66,39 @@ public class SearchEmployeePayroll {
         validUsers.put("employee", "12345");
         validUsers.put("payroll_staff", "12345");
 
-        String username;
+        // initialize username and password to satisfy Java compiler
+        String username = "";
         String password;
 
-        while (true) { // keep asking for login until correct credentials
+        int attempts = 0;
+        int maxAttempts = 3;
+
+        // LOGIN LOOP WITH LIMIT
+
+        while (attempts < maxAttempts) {
             System.out.print("Username: ");
             username = scanner.nextLine().trim();
 
             System.out.print("Password: ");
             password = scanner.nextLine().trim();
 
-        // check credentials
-        if (validUsers.containsKey(username) && validUsers.get(username).equals(password)) {
-            break; // login successful, exit loop
-        } else {
-            System.out.println("Incorrect username or password.\nPlease try again.\n");
+            if (validUsers.containsKey(username) && validUsers.get(username).equals(password)) {
+                break; // login successful, exit loop
+            } else {
+                attempts++;
+                System.out.println("Incorrect username or password.");
+                if (attempts < maxAttempts) {
+                    System.out.println("Please try again.\n"); // allow retry if attempts remain
+                }
+            }
         }
-    }
-        
+
+        // stop program if maximum login attempts reached
+        if (attempts == maxAttempts) {
+            System.out.println("Maximum login attempts reached. Program terminated.");
+            return; // terminate program after too many failed logins
+        }
+
         // LOAD CSV FILES
 
         File employeeFile = new File(EMPLOYEE_CSV_PATH);
@@ -95,8 +110,9 @@ public class SearchEmployeePayroll {
             return;
         }
 
-        // load employee and attendance data
+        // load employee data from CSV
         Map<String, Employee> employees = loadEmployees(employeeFile);
+        // load attendance hours per employee per cutoff
         Map<String, Map<String, Double>> cutoffHoursByEmployee = loadAttendanceCutoffHours(attendanceFile);
 
         // exit if no employee records are found
@@ -107,10 +123,11 @@ public class SearchEmployeePayroll {
 
         // BRANCH MENU BASED ON USERNAME
 
+        // employee sees only their own info, payroll_staff sees full payroll menu
         if (username.equals("employee")) {
-            runEmployeeMenu(scanner, employees); // show only their own info
+            runEmployeeMenu(scanner, employees); // show only individual employee info
         } else if (username.equals("payroll_staff")) {
-            runMenu(employees, cutoffHoursByEmployee); // full payroll menu
+            runMenu(employees, cutoffHoursByEmployee); // full payroll processing menu
         }
     }
     
