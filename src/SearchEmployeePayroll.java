@@ -1,81 +1,89 @@
 // IMPORTS
 
-import java.io.BufferedReader;  // Efficiently reads text from files
-import java.io.File;            // Represents a file or directory path
-import java.io.FileReader;      // Opens and reads text from a file
-import java.io.IOException;     // Handles errors when reading files
-import java.time.Duration;      // Calculates time difference between two times
-import java.time.LocalDate;     // Stores a date (year, month, day)
-import java.time.LocalTime;     // Stores a time (hour and minute)
-import java.time.YearMonth;     // Stores a specific month and year
-import java.time.format.DateTimeFormatter;          // Parses and formats dates and times
-import java.time.format.DateTimeParseException;     // Handles invalid date or time formats
-import java.util.ArrayList;     // Stores dynamic lists of data
-import java.util.HashMap;       // Stores data using key value pairs
-import java.util.List;          // Interface used for list collections
-import java.util.Locale;        // Defines regional settings for parsing
-import java.util.Map;           // Interface for key value collections
-import java.util.Scanner;       // Reads user input from the console
-import java.util.regex.Pattern; // Matches patterns (CSV splitting)
+import java.io.BufferedReader;  // Used to efficiently read large CSV files line-by-line for payroll data processing
+import java.io.File;            // Represents external CSV files containing employee and attendance records
+import java.io.FileReader;      // Enables reading of CSV file contents into the system
+import java.io.IOException;     // Handles file access errors to prevent system crashes during data loading
+import java.time.Duration;      // Calculates total working hours from log-in and log-out times
+import java.time.LocalDate;     // Represents attendance dates for payroll cutoff classification
+import java.time.LocalTime;     // Represents employee log-in and log-out times
+import java.time.YearMonth;     // Determines month and year boundaries
+import java.time.format.DateTimeFormatter;       // Ensures consistent parsing of date/time formats from CSV input
+import java.time.format.DateTimeParseException;  // Handles invalid date/time inputs to maintain data integrity
+import java.util.ArrayList;     // Stores dynamic lists such as generated payroll cutoff periods
+import java.util.HashMap;       // Stores employee and payroll data for fast lookup by employee number
+import java.util.List;          // Provides abstraction for handling collections of payroll-related data
+import java.util.Locale;        // Ensures consistent parsing of time formats regardless of system settings
+import java.util.Map;           // Defines structured key-value storage for employees and computed payroll data
+import java.util.Scanner;       // Captures user input for login and menu navigation
+import java.util.regex.Pattern; // Splits CSV rows correctly, handling quoted values to avoid data corruption
 
 public class SearchEmployeePayroll {
 
-    // FILE PATHS - used by the system to locate the CSV data files
-    
+    // Defines the data sources required for payroll processing (employee details and attendance records)
     private static final String EMPLOYEE_CSV_PATH = "Employee Details.csv";
     private static final String ATTENDANCE_CSV_PATH = "attendance_record.csv";
 
-    // pattern used to split CSV rows while ignoring commas inside quotation marks
+    // Ensures accurate CSV parsing to prevent data misalignment caused by commas inside quoted values
     private static final Pattern CSV_SPLIT_PATTERN =
             Pattern.compile(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
     
-    // date and time formats used in CSV files
+    // Standardizes date and time parsing to maintain consistency with input data formats
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("MM/dd/yyyy");
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("H:mm", Locale.ENGLISH);
 
-    // CSV column indexes
+    // Maps CSV columns to employee attributes to ensure correct payroll data extraction
     private static final int COL_EMPLOYEE_NUMBER = 0;
     private static final int COL_LAST_NAME = 1;
     private static final int COL_FIRST_NAME = 2;
     private static final int COL_BIRTHDAY = 3;
     private static final int COL_GROSS_SEMI_MONTHLY = 17;
 
+    // Validates employee records to prevent incomplete data from affecting payroll computation
     private static final int MIN_EMPLOYEE_COLS = 18;
+    
+    // Maps attendance data fields required for calculating worked hours
     private static final int ATTENDANCE_COL_EMPLOYEE_NUMBER = 0;
     private static final int ATTENDANCE_COL_DATE = 3;
     private static final int ATTENDANCE_COL_LOG_IN = 4;
     private static final int ATTENDANCE_COL_LOG_OUT = 5;
+    
+    // Ensures attendance records are complete before processing work hours
     private static final int MIN_ATTENDANCE_COLS = 6;
 
-    // MAIN METHOD
-
+    /**
+     * MAIN METHOD
+     * Entry point of the payroll system
+     * 
+     * Handles user authentication, loads required data sources,
+     * and routes users to the appropriate system functions based on role.
+     * 
+     * @param args command-line arguments (not used in this application)
+     */
     public static void main(String[] args) {
         
-        // LOGIN SYSTEM - verifies user before accessing the program
-
-        // display login header
+        // LOGIN SYSTEM - enforces authentication and access control for payroll operations
         System.out.println("========================================");
         System.out.println("             MOTORPH LOGIN              ");
         System.out.println("========================================");
 
-        // scanner used to read input from the user
+        // Captures user input for authentication and menu navigation
         Scanner scanner = new Scanner(System.in);
         
-        // list of valid usernames and passwords
+        // Establishes user roles to control access to employee vs payroll functionalities
         Map<String, String> validUsers = new HashMap<>();
         validUsers.put("employee", "12345");
         validUsers.put("payroll_staff", "12345");
 
-        // variables to store login input
+        // Holds username and password entered during login for validation
         String username = "";
         String password;
 
-        // track login attempts
+        // Limits login attempts to prevent unauthorized access
         int attempts = 0;
         int maxAttempts = 3;
 
-        // LOGIN LOOP - allows user to try logging in up to 3 times
-
+        // LOGIN LOOP - limits authentication attempts to 3 to prevent unauthorized access
         while (attempts < maxAttempts) {
             System.out.print("Username: ");
             username = scanner.nextLine().trim();
@@ -83,7 +91,7 @@ public class SearchEmployeePayroll {
             System.out.print("Password: ");
             password = scanner.nextLine().trim();
 
-            // check if username and password match stored accounts
+            // Validates credentials to grant role-based system access
             if (validUsers.containsKey(username) && validUsers.get(username).equals(password)) {
                 break; // login successful, exit loop
             } else {
@@ -95,102 +103,116 @@ public class SearchEmployeePayroll {
             }
         }
 
-        // stop program if login attempts exceed the limit
+        // Terminates the program after exceeding the maximum of 3 allowed login attempts
         if (attempts == maxAttempts) {
             System.out.println("Maximum login attempts reached. Program terminated.");
             return;
         }
 
-        // LOAD CSV FILES - prepares employee and attendance data
-
+        // LOAD CSV FILES - initializes employee and attendance data from external sources for payroll processing
         File employeeFile = new File(EMPLOYEE_CSV_PATH);
         File attendanceFile = new File(ATTENDANCE_CSV_PATH);
 
-        // check if the required files exist and can be read
+        // Prevents execution if required payroll data files are missing or inaccessible
         if (!isReadableFile(employeeFile) || !isReadableFile(attendanceFile)) {
             System.out.println("Error: Required CSV file/s not found or unreadable.");
             return;
         }
 
-        // load employee information from the CSV file
+        // Loads employee records used as the foundation for payroll computation
         Map<String, Employee> employees = loadEmployees(employeeFile);
 
-        // load attendance records and calculate hours per cutoff
+        // Aggregates attendance data into cutoff-based working hours
         Map<String, Map<String, Double>> cutoffHoursByEmployee = loadAttendanceCutoffHours(attendanceFile);
 
-        // stop program if no employee records are found
+        // Prevents execution if no valid employee data is available
         if (employees.isEmpty()) {
             System.out.println("No employee records found.");
             return;
         }
 
-        // MENU ACCESS - different users see different menus
-
-        // employee can only view their own data
+        // MENU ACCESS - enforces role-based access to restrict features based on user permissions
+        
+        // Employees are limited to viewing their own data to protect sensitive payroll information
         if (username.equals("employee")) {
             runEmployeeMenu(scanner, employees);
             
-        // payroll staff can access full payroll functions
+        // Payroll staff are granted full access to perform payroll processing tasks
         } else if (username.equals("payroll_staff")) {
             runMenu(employees, cutoffHoursByEmployee);
         }
     }
     
-    // EMPLOYEE MENU - allows regular employees to view their payroll information
-
+    /**
+     * EMPLOYEE MENU
+     * Displays and manages the employee self-service menu.
+     * 
+     * Allows employees to access and view their payroll details
+     * using their employee number.
+     * 
+     * @param scanner   handles user input
+     * @param employees map of employee records indexed by employee number
+    */
     private static void runEmployeeMenu(Scanner scanner, Map<String, Employee> employees) {
-        while (true) { // menu loop keeps running until the user chooses to exit
+        while (true) { // Keeps menu active until user chooses to exit
             
-            // display employee menu options
+            // Presents available actions for employees to access and view their payroll information
             System.out.println("\n============ EMPLOYEE MENU =============");
             System.out.println("Select an option:");
             System.out.println("  1. Enter Employee Number");
             System.out.println("  2. Exit Program");
             System.out.print("Enter choice: ");
 
-            // read user choice
+            // Captures user input to determine the selected menu action
             String choice = scanner.nextLine().trim();
 
-            // handle menu selection
+            // Routes execution based on the selected menu option
             switch (choice) {
 
-                // option 1 allows employee to search using their employee number
                 case "1":
+                    // Allows employee to access their personal information
                     System.out.print("Enter Employee Number: ");
                     String empNum = scanner.nextLine().trim();
 
-                    // retrieve employee record from the stored employee list
+                    // Fetches employee data using the provided ID to validate existence
                     Employee emp = employees.get(empNum);
 
                     if (emp != null) {
-                        // display payroll information for the selected employee
-                        printEmployeePayroll(emp, new HashMap<>()); // show payroll info
+                        // Displays the employee's payroll details based on retrieved records
+                        printEmployeePayroll(emp, new HashMap<>()); // Show payroll information
                     } else {
                         System.out.println("Employee number does not exist.");
                     }
                     break;
 
-                // option 2 exits the employee menu and ends the program
                 case "2":
+                    // Provides a controlled exit from the employee interface
                     System.out.println("Exiting program.");
-                    return; // exit employee menu
+                    return; // Exits the menu loop, stopping further user interaction
 
-                // hanlde invalid menu inputs
+                // Prevents invalid input from disrupting menu flow
                 default:
                     System.out.println("Invalid choice. Please select 1 or 2.");
             }
         }
     }
 
-    // PAYROLL MENU - allows payroll staff to process payroll for one or all employees
-
+    /**
+     * PAYROLL MENU
+     * Displays and manages the payroll staff menu.
+     * 
+     * Allows payroll staff to process payroll for individual employees
+     * or generate payroll for all employees based on attendance data.
+     * 
+     * @param employees               map of employee records
+     * @param cutoffHoursByEmployee   computed work hours per cutoff period
+     */
     private static void runMenu(Map<String, Employee> employees, Map<String, Map<String, Double>> cutoffHoursByEmployee) {
         Scanner scanner = new Scanner(System.in);
 
-        // menu loop runs until payroll staff chooses to exit
-        while (true) {
+        while (true) { // Keeps payroll menu active until user exits
 
-            // display payroll menu options
+            // Presents payroll processing options to allow staff to select how payroll will be handled
             System.out.println("\n=========== PROCESS PAYROLL ============");
             System.out.println("Select an option:");
             System.out.println("  1. One Employee");
@@ -198,71 +220,107 @@ public class SearchEmployeePayroll {
             System.out.println("  3. Exit Program");
             System.out.print("Enter choice: ");
 
-            // read menu selection from user
+            // Captures user input to determine the selected payroll operation
             String choice = scanner.nextLine().trim();
 
-            // handle selected menu option
+            // Routes execution based on the selected payroll processing option
             switch (choice) {
-                case "1": // process payroll for one employee
+                case "1": 
+                    // Processes payroll for a selected employee
                     processOneEmployee(scanner, employees, cutoffHoursByEmployee);
                     break;
-                case "2": // process payroll for all employees
+                    
+                case "2": 
+                    // Generates payroll for all employees based on computed attendance data
                     processAllEmployees(employees, cutoffHoursByEmployee);
                     break;
-                case "3": // exit payroll menu
+                    
+                case "3": 
+                    // Provides controlled exit from payroll interface
                     System.out.println("Exiting program.");
                     return;
-                default: // handle invalid input
+                    
+                default: 
+                    // Prevents invalid input from disrupting menu flow
                     System.out.println("Invalid choice. Please select 1, 2, or 3.");
             }
         }
     }
 
-    // PROCESS SINGLE EMPLOYEE - prompts for an employee number and prints their payroll
-
+    /**
+     * PROCESS SINGLE EMPLOYEE
+     * Processes payroll for a single employee.
+     * 
+     * Retrieves the employee record and generates payroll output
+     * based on computed attendance hours per cutoff period.
+     * 
+     * @param scanner                  handles user input
+     * @param employees                map of employee records indexed by employee number
+     * @param cutoffHoursByEmployee    computed work hours per cutoff period
+    */
     private static void processOneEmployee(Scanner scanner, Map<String, Employee> employees,
                                            Map<String, Map<String, Double>> cutoffHoursByEmployee) {
-        // ask user for employee number
+        
+        // Captures employee number to locate payroll data
         System.out.print("Enter employee number: ");
         String employeeNumber = scanner.nextLine().trim();
 
-        // get employee record
+        // Retrieves the employee record using the provided employee number for payroll processing
         Employee employee = employees.get(employeeNumber);
 
-        // handle case where employee does not exist
+        // Prevents processing for non-existent employee records
         if (employee == null) {
             System.out.println("Employee number does not exist.");
             return;
         }
 
-        // print payroll for this employee using stored attendance hours
+        // Generates payroll using available attendance data
         printEmployeePayroll(employee, cutoffHoursByEmployee.getOrDefault(employeeNumber, new HashMap<>()));
     }
 
-    // PROCESS ALL EMPLOYEES - loops through all employees and prints payroll for each
-
+    /**
+     * PROCESS ALL EMPLOYEES
+     * Processes payroll for all employees.
+     * 
+     * Iterates through all employee records and generates payroll output
+     * using their corresponding attendance data per cutoff period.
+     * 
+     * @param employees               map of employee records
+     * @param cutoffHoursByEmployee   computed work hours per cutoff period
+     */
       private static void processAllEmployees(Map<String, Employee> employees,
                                             Map<String, Map<String, Double>> cutoffHoursByEmployee) {
-        // iterate over all employee records
+          
+        // Loops through all employees to process payroll records
         for (Employee employee : employees.values()) {
 
-            // get attendance hours for employee
+            // Retrieves attendance data required for payroll calculation
             Map<String, Double> employeeHours = cutoffHoursByEmployee.getOrDefault(employee.employeeNumber, new HashMap<>());
-            // print payroll for current employee
+            
+            // Generates payroll output based on employee data and computed attendance hours
             printEmployeePayroll(employee, employeeHours);
-            // add spacing between employee records
+            
+            // Adds spacing to improve readability between employee payroll outputs
             System.out.println();
         }
     }
 
-    // PRINT PAYROLL INFO - displays an employee's details and payroll per cutoff
-
+    /**
+     * PRINT PAYROLL INFO
+     * Generates and displays payroll details for a given employee.
+     * 
+     * Uses attendance-based cutoff periods to compute gross pay,
+     * apply deductions, and determine net salary.
+     * 
+     * @param employee     employee record containing personal and salary data
+     * @param cutoffHours  map of worked hours per cutoff period
+     */
     private static void printEmployeePayroll(Employee employee, Map<String, Double> cutoffHours) {
 
-        // list of cutoff periods from June to December 2024
+        // Defines the payroll cutoff periods from June to December 2024
         List<String> cutoffKeys = buildCutoffKeysFromJuneToDecember2024();
 
-        // display employee information
+        // Displays employee information before showing payroll breakdown
         System.out.println("\n========= EMPLOYEE INFORMATION =========");
         System.out.println("Employee #: " + employee.employeeNumber);
         System.out.println("Employee Name: " + employee.fullName);
