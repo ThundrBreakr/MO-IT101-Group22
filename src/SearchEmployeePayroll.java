@@ -21,8 +21,8 @@ import java.util.regex.Pattern; // Splits CSV rows correctly, handling quoted va
 public class SearchEmployeePayroll {
 
     // Defines the data sources required for payroll processing (employee details and attendance records)
-    private static final String EMPLOYEE_CSV_PATH = "Employee Details.csv";
-    private static final String ATTENDANCE_CSV_PATH = "attendance_record.csv";
+    private static String EMPLOYEE_CSV_PATH;
+    private static String ATTENDANCE_CSV_PATH;
 
     // Ensures accurate CSV parsing to prevent data misalignment caused by commas inside quoted values
     private static final Pattern CSV_SPLIT_PATTERN =
@@ -40,7 +40,7 @@ public class SearchEmployeePayroll {
     private static final int COL_GROSS_SEMI_MONTHLY = 17;
 
     // Validates employee records to prevent incomplete data from affecting payroll computation
-    private static final int MIN_EMPLOYEE_COLS = 18;
+    private static final int MIN_EMPLOYEE_COLS = 18; // Employee CSV must have columns 0–17 (number, name, birthday, gross semi-monthly)
     
     // Maps attendance data fields required for calculating worked hours
     private static final int ATTENDANCE_COL_EMPLOYEE_NUMBER = 0;
@@ -49,7 +49,7 @@ public class SearchEmployeePayroll {
     private static final int ATTENDANCE_COL_LOG_OUT = 5;
     
     // Ensures attendance records are complete before processing work hours
-    private static final int MIN_ATTENDANCE_COLS = 6;
+    private static final int MIN_ATTENDANCE_COLS = 6; // Attendance CSV must have columns 0–5 (employee number, date, log-in/out)
 
     /**
      * MAIN METHOD
@@ -61,6 +61,9 @@ public class SearchEmployeePayroll {
      * @param args command-line arguments (not used in this application)
      */
     public static void main(String[] args) {
+
+        EMPLOYEE_CSV_PATH = args.length > 0 ? args[0] : "Employee Details.csv";
+        ATTENDANCE_CSV_PATH = args.length > 1 ? args[1] : "attendance_record.csv";
         
         // LOGIN SYSTEM - enforces authentication and access control for payroll operations
         System.out.println("========================================");
