@@ -12,7 +12,9 @@ MotorPH Payroll System Phase 1 | Computer Programming 1
 
 **Marco Sim Cioso Igot**
 - Improved code readability by adding inline documentation, clear import comments, section headers, and brief method descriptions, making the code easier to understand and navigate.
-
+  
+**Jose Masangkay Dayao**
+-Assisted in system development by contributing to testing, debugging, and improving overall program functionality.
 ---
 # MotorPH Payroll System
 
