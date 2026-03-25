@@ -9,9 +9,14 @@ MotorPH Payroll System Phase 1 | Computer Programming 1
 
 **Kachina Shen Pascual**
 - Handled payroll output formatting and organized the code structure. Implemented the login authentication system, prepared the project worksheet, and wrote the code explanations and documentation for the project.
+
+**Marco Sim Cioso Igot**
+- Improved code readability by adding inline documentation, clear import comments, section headers, and brief method descriptions, making the code easier to understand and navigate.
   
- **Jose dayao**
-- Assisted with debugging and testing the payroll system to ensure accurate calculations of gross and net salaries.Improved CSV file handling by implementing validation checks for missing or invalid data.
+**Jose Masangkay Dayao**
+
+- Assisted in system development by contributing to testing, debugging, and improving overall program functionality.
+
 ---
 # MotorPH Payroll System
 
