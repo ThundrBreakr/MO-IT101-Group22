@@ -138,7 +138,7 @@ public class SearchEmployeePayroll {
         
         // Employees are limited to viewing their own data to protect sensitive payroll information
         if (username.equals("employee")) {
-            runEmployeeMenu(scanner, employees);
+            runEmployeeMenu(scanner, employees, cutoffHoursByEmployee);
             
         // Payroll staff are granted full access to perform payroll processing tasks
         } else if (username.equals("payroll_staff")) {
@@ -156,7 +156,7 @@ public class SearchEmployeePayroll {
      * @param scanner   handles user input
      * @param employees map of employee records indexed by employee number
     */
-    private static void runEmployeeMenu(Scanner scanner, Map<String, Employee> employees) {
+    private static void runEmployeeMenu(Scanner scanner, Map<String, Employee> employees, Map<String, Map<String, Double>> cutoffHoursByEmployee) {
         while (true) { // Keeps menu active until user chooses to exit
             
             // Presents available actions for employees to access and view their payroll information
@@ -182,7 +182,7 @@ public class SearchEmployeePayroll {
 
                     if (emp != null) {
                         // Displays the employee's payroll details based on retrieved records
-                        printEmployeePayroll(emp, new HashMap<>()); // Show payroll information
+                        printEmployeePayroll(emp, cutoffHoursByEmployee.getOrDefault(empNum, new HashMap<>())); // Show payroll information
                     } else {
                         System.out.println("Employee number does not exist.");
                     }

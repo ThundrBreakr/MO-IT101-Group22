@@ -1,3 +1,4 @@
+package Excercises;
 import java.util.Scanner;
 
 public class PhilHealthCalculator {
